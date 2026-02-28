@@ -1,1 +1,19 @@
 BugBounty-Recon-Methodology
+
+ Phase 1: Passive Intelligence & Scope Mapping
+
+Identify the organization's global footprint, network boundaries, and historical data.
+
+1.1 ASN & Network Mapping
+
+# Get ASN and convert to IP ranges
+asnmap -d target.com | dnsx -silent > asn.txt
+
+# Whois lookup for IP ranges
+whois -h whois.radb.net -- '-i origin AS714' | grep -Eo "([0-9.]+){4}/[0-9]+" | uniq | mapcidr -silent | httpx > cidr_ips.txt
+
+# Extract IPs from 3rd party providers
+curl -s "https://urlscan.io/api/v1/search/?q=domain:target.com&size=10000" | jq -r '.results[]?.page?.ip//empty' | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | tee urlscan_ips.txt
+curl -s "https://www.virustotal.com/vtapi/v2/domain/report?domain=target.com&apikey=[key]" | jq -r '..|.ip_address?//empty' | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | tee vt_ips.txt
+curl -s 'https://subdomainfinder.c99.nl/scans/2025-12-29/target.com' | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u > c99_ips.txt
+
